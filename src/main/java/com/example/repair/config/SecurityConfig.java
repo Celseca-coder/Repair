@@ -53,6 +53,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/repairman/login").permitAll()  // 允许POST登录
                 .requestMatchers(HttpMethod.POST, "/api/repairman/register").permitAll()  // 允许POST注册
+                .requestMatchers(HttpMethod.POST, "/users/register").permitAll()  // 允许用户注册
                 .anyRequest().authenticated()  // 其他请求需要认证
             )
             .authenticationProvider(authenticationProvider())  // 添加认证提供者

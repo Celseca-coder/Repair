@@ -8,6 +8,7 @@ import com.example.repair.entity.UserProfile;
 import com.example.repair.repository.UserProfileRepository;
 import com.example.repair.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -19,12 +20,16 @@ public class UserRegisterService {
     @Autowired
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final PasswordEncoder passwordEncoder;
+    
     public UserRegisterService(
             UserRepository userRepository,
-            UserProfileRepository userProfileRepository
+            UserProfileRepository userProfileRepository,
+            PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
+        this.passwordEncoder = passwordEncoder;
     }
     public UserRegisterResponseDTO registerUser(UserRegisterDTO request) {
         // 1. 校验用户名格式
@@ -165,7 +170,7 @@ public class UserRegisterService {
     private User createAndSaveUser(UserRegisterDTO userDTO) {
         User user = new User();
         user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));  // 加密密码
         return userRepository.save(user);
     }
 
