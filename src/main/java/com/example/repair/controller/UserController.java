@@ -1,5 +1,10 @@
 package com.example.repair.controller;
 
+import com.example.repair.dto.UserProfileDTO;
+import com.example.repair.dto.UserRegisterDTO;
+import com.example.repair.dto.UserRegisterResponseDTO;
+import com.example.repair.service.impl.UserRegisterService;
+import com.example.repair.util.JwtUtil;
 import com.example.repair.dto.*;
 import com.example.repair.service.impl.UserEditService;
 import com.example.repair.service.impl.UserLoginService;
@@ -20,9 +25,10 @@ import java.util.Map;
 @RequestMapping("/users")
 public class UserController {
 
+    private final UserRegisterService userRegisterService;
+
     @Autowired
     private JwtUtil jwtUtil;
-    private final UserRegisterService userRegisterService;
     private final UserLoginService userLoginService;
     private final UserEditService userEditService;
 
@@ -56,7 +62,7 @@ public class UserController {
     }
 
 
-//用户登录
+    //用户登录
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request, HttpServletResponse response) {
         try {
