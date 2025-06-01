@@ -1,5 +1,8 @@
 package com.example.repair.service;
 
+import com.example.repair.dto.VehicleAddResponse;
+import com.example.repair.dto.VehicleDeleteRequest;
+import com.example.repair.dto.VehicleEditRequest;
 import com.example.repair.dto.VehicleRequestDTO;
 import com.example.repair.entity.Vehicle;
 import com.example.repair.entity.User;
@@ -7,9 +10,9 @@ import com.example.repair.entity.User;
 import java.util.List;
 
 public interface VehicleService {
-    Vehicle addVehicle(VehicleRequestDTO request);
-    List<Vehicle> getVehiclesByOwner(User owner);
-    Vehicle updateVehicle(Long vehicleId, Vehicle vehicle, User owner);
-    void deleteVehicle(Long vehicleId, User owner);
+    VehicleAddResponse addVehicle(VehicleRequestDTO request);
+    List<Vehicle> getVehiclesByOwner(String username);
+    Vehicle updateVehicle(VehicleEditRequest request);
+    void deleteVehicle(VehicleDeleteRequest request);
     Vehicle getVehicleById(Long vehicleId, User owner);
 }

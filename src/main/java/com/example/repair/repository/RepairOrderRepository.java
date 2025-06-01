@@ -1,6 +1,7 @@
 package com.example.repair.repository;
 
 import com.example.repair.entity.RepairOrder;
+import com.example.repair.entity.Vehicle;
 import com.example.repair.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,6 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
     long countByRepairmanIdAndCreateTimeBetween(Long repairmanId, LocalDateTime start, LocalDateTime end);
     long countByStatus(OrderStatus status);
     boolean existsByRepairmanIdAndStatus(Long repairmanId, OrderStatus status);
+
+    List<RepairOrder> findByVehicle(Vehicle vehicle);
 } 
