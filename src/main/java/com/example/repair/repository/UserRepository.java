@@ -12,4 +12,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     long countByCreateTimeBetween(LocalDateTime start, LocalDateTime end);
     long countByLastLoginTimeBetween(LocalDateTime start, LocalDateTime end);
-} 
+
+}

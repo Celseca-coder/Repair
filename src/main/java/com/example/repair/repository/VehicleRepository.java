@@ -1,5 +1,6 @@
 package com.example.repair.repository;
 
+import com.example.repair.entity.User;
 import com.example.repair.entity.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByOwnerId(Long ownerId);
     boolean existsByLicensePlate(String licensePlate);
     boolean existsByVin(String vin);
+
+    List<Vehicle> findByOwner(User owner);
 } 

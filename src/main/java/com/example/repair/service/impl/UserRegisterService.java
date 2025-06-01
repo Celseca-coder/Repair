@@ -1,4 +1,4 @@
-package com.example.repair.service;
+package com.example.repair.service.impl;
 
 import com.example.repair.dto.UserProfileDTO;
 import com.example.repair.dto.UserRegisterDTO;
@@ -9,10 +9,6 @@ import com.example.repair.repository.UserProfileRepository;
 import com.example.repair.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserRegisterService {
@@ -62,6 +58,7 @@ public class UserRegisterService {
         profileDTO.setAddress(profile.getAddress());
 
         UserRegisterResponseDTO response = new UserRegisterResponseDTO();
+        response.setId(user.getId());
         response.setUsername(user.getUsername());
         response.setPassword(user.getPassword());
         response.setProfile(profileDTO);
@@ -129,7 +126,7 @@ public class UserRegisterService {
 
     private void validateProfilenameFormat(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Name cannot be null or empty.");
+            throw new IllegalArgumentException("姓名不能为空");
         }
 
         // 检查是否只包含中文字符
@@ -147,7 +144,6 @@ public class UserRegisterService {
         }
     }
 
-    // 辅助方法：检查用户名是否存在
     private void checkUsernameExistence(String username) {
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("用户名已存在");
