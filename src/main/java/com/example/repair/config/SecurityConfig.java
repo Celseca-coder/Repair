@@ -57,6 +57,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/users/login").permitAll()  // 允许用户登录
                 .requestMatchers(HttpMethod.POST, "/users/logout").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/editUser").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/vehicles/addVehicles").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/vehicles/getVehicles").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/vehicles/editVehicles").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/vehicles/deleteVehicles").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/repairs/addRequest").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/repairs/getRequest").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/repairs/getOrders").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/reviews/addReviews").permitAll()
+
                 .anyRequest().authenticated()  // 其他请求需要认证
             )
             .authenticationProvider(authenticationProvider())  // 添加认证提供者
