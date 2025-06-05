@@ -12,6 +12,7 @@ import com.example.repair.service.VehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,39 +21,71 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Autowired
     private VehicleRepository vehicleRepository;
+    
+    @Autowired
     private UserRepository userRepository;
 
     @Override
     public VehicleAddResponse addVehicle(VehicleRequestDTO request) {
+        // 检查车牌号是否已存在
+        if (vehicleRepository.existsByLicensePlate(request.getLicensePlate())) {
+            throw new RuntimeException("该车牌号已存在");
+        }
+        
+        // 检查VIN码是否已存在
+        if (vehicleRepository.existsByVin(request.getVin())) {
+            throw new RuntimeException("该VIN码已存在");
+        }
+        
+        // 检查年份是否合理
+        int currentYear = LocalDateTime.now().getYear();
+        if (request.getYear() > currentYear + 1) {
+            throw new RuntimeException("车辆年份不能超过" + (currentYear + 1) + "年");
+        }
+        if (request.getYear() < 1900) {
+            throw new RuntimeException("车辆年份不能早于1900年");
+        }
+
         Vehicle vehicle = new Vehicle();
         Optional<User> ownerOpt = userRepository.findByUsername(request.getUsername());
         User owner = ownerOpt.orElseThrow(() -> new RuntimeException("用户不存在"));
         vehicle.setOwner(owner);
-        if (request.getLicensePlate() == null ){
+        
+        if (request.getLicensePlate() == null) {
             throw new RuntimeException("车牌号不能为空");
         }
         vehicle.setLicensePlate(request.getLicensePlate());
+        
         if (request.getBrand() == null) {
             throw new RuntimeException("品牌不能为空");
         }
         vehicle.setBrand(request.getBrand());
+        
         if (request.getModel() == null) {
             throw new RuntimeException("型号不能为空");
         }
         vehicle.setModel(request.getModel());
+        
         if (request.getYear() == null) {
             throw new RuntimeException("年份不能为空");
         }
         vehicle.setYear(request.getYear());
+        
         if (request.getColor() == null) {
             throw new RuntimeException("颜色不能为空");
         }
         vehicle.setColor(request.getColor());
+        
         if (request.getVin() == null) {
             throw new RuntimeException("VIN不能为空");
         }
         vehicle.setVin(request.getVin());
-        vehicleRepository.save(vehicle);
+        
+        try {
+            vehicleRepository.save(vehicle);
+        } catch (Exception e) {
+            throw new RuntimeException("保存车辆信息失败：" + e.getMessage());
+        }
 
         VehicleAddResponse response = new VehicleAddResponse();
         response.setVehicle(vehicle);

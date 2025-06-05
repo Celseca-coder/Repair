@@ -19,8 +19,13 @@ public class RepairRequestService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
     private VehicleService vehicleService;
+    
+    @Autowired
     private RepairRequestRepository repairRequestRepository;
+
     public void createRepairRequest(VehicleRepairRequest request) {
         RepairRequest repairRequest = new RepairRequest();
 

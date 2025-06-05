@@ -23,8 +23,14 @@ import java.util.List;
 public class UserRepairController {
     @Autowired
     private VehicleService vehicleService;
+    
+    @Autowired
     private RepairRequestService repairRequestService;
+    
+    @Autowired
     private RepairOrderRepository repairOrderRepository;
+    
+    @Autowired
     private VehicleRepository vehicleRepository;
 
     @PostMapping("/addRequest")

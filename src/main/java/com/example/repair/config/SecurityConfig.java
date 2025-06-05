@@ -57,6 +57,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/users/login").permitAll()  // 允许用户登录
                 .requestMatchers(HttpMethod.POST, "/users/logout").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/editUser").permitAll()
+                .requestMatchers(HttpMethod.POST, "/vehicles/**").authenticated()  // 允许已认证用户访问车辆相关端点
+                .requestMatchers(HttpMethod.GET, "/vehicles/**").authenticated()  // 允许已认证用户访问车辆相关端点
                 .anyRequest().authenticated()  // 其他请求需要认证
             )
             .authenticationProvider(authenticationProvider())  // 添加认证提供者
