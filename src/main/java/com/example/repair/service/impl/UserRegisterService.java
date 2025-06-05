@@ -28,10 +28,10 @@ public class UserRegisterService {
         this.passwordEncoder = passwordEncoder;
     }
     public UserRegisterResponseDTO registerUser(UserRegisterDTO request) {
-        // 1. 校验用户名格式
+        // 1. 校验昵称格式
         validateUsernameFormat(request.getUsername());
 
-        // 2. 检查用户名是否存在
+        // 2. 检查昵称是否存在
         checkUsernameExistence(request.getUsername());
 
         // 检查用户密码
@@ -131,7 +131,7 @@ public class UserRegisterService {
 
     private void validateProfilenameFormat(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("姓名不能为空");
+            throw new IllegalArgumentException("姓名不能为空,不能含有空格");
         }
 
         // 检查是否只包含中文字符
@@ -145,7 +145,7 @@ public class UserRegisterService {
 
     private void validateUsernameFormat(String username) {
         if (!username.matches("^[a-zA-Z0-9_]{4,20}$")) {
-            throw new IllegalArgumentException("用户名只能包含数字、字母、下划线，长度4-20个字符");
+            throw new IllegalArgumentException("昵称不能包含数字、字母、下划线，长度4-20个字符");
         }
     }
 

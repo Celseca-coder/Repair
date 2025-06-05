@@ -10,6 +10,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -21,6 +22,7 @@ public class UserLoginService {
     private final UserRepository userRepository;
     private final UserLoginRecordRepository userLoginRecordRepository;  // 新增属性
     private final JwtUtil jwtUtil;
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     public UserLoginService(
             UserRepository userRepository,
             UserLoginRecordRepository userLoginRecordRepository , // 新增参数
@@ -32,10 +34,11 @@ public class UserLoginService {
         this.jwtUtil = jwtUtil;
     }
     public String login(LoginRequest request) {
-        Optional<User> userOptional = userRepository.findByUsername(request.username());
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (request.password().equals(user.getPassword())) {
+        //Optional<User> userOptional = userRepository.findByUsername(request.username());
+        User user = userRepository.findByUsername(request.username()).orElse(null);
+        if (user != null) {
+            //User user = userOptional.get();
+            if (checkPassword(request.password(), user.getPassword())) {
                 // 调用 JwtTokenUtil 生成 Token
                 String token = jwtUtil.generateToken(user.getUsername());
                 UserLoginRecord record = new UserLoginRecord(user.getUsername(), token, new Date());
@@ -43,8 +46,13 @@ public class UserLoginService {
                 userLoginRecordRepository.save(record);
                 return token;
             }
+            throw new RuntimeException(user.getPassword());
         }
-        throw new RuntimeException("用户名或密码错误");
+        throw new RuntimeException("昵称不存在");
+    }
+
+    public boolean checkPassword(String password,String encryptedPassword){
+        return passwordEncoder.matches(password, encryptedPassword);
     }
 
     public String logout(HttpServletRequest request, HttpServletResponse response) {

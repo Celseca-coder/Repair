@@ -54,6 +54,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/repairman/login").permitAll()  // 允许POST登录
                 .requestMatchers(HttpMethod.POST, "/api/repairman/register").permitAll()  // 允许POST注册
                 .requestMatchers(HttpMethod.POST, "/users/register").permitAll()  // 允许用户注册
+                .requestMatchers(HttpMethod.POST, "/users/login").permitAll()  // 允许用户登录
+                .requestMatchers(HttpMethod.POST, "/users/logout").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users/editUser").permitAll()
                 .anyRequest().authenticated()  // 其他请求需要认证
             )
             .authenticationProvider(authenticationProvider())  // 添加认证提供者
