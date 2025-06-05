@@ -14,6 +14,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -93,6 +95,9 @@ public class UserController {
     public ResponseEntity<?> editUser(@RequestBody UserEditRequest request) {
         try {
             UserRegisterResponseDTO editUser = userEditService.editUser(request);
+            if (true ){
+                throw new RuntimeException("修改失败");
+            }
             String token = jwtUtil.generateToken(request.getUsername());
 
             Map<String, Object> response = new HashMap<>();
@@ -103,6 +108,7 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
+            log.error("Unexpected error occurred during user edit", e);
             return ResponseEntity.internalServerError().body("修改过程中发生错误");
         }
     }
