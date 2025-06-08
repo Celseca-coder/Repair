@@ -32,6 +32,10 @@ public interface AdminService {
     RepairOrderDTO updateRepairOrder(Long orderId, RepairOrderDTO orderDTO);
     void deleteRepairOrder(Long orderId);
     
+    // 维修请求管理
+    List<RepairRequestDTO> getPendingRepairRequests();
+    RepairOrderDTO convertRequestToOrder(Long requestId, RepairRequestToOrderDTO request);
+    
     // 数据统计
     Map<String, Object> getSystemStatistics();
     Map<String, Object> getRepairStatistics();

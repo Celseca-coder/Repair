@@ -44,6 +44,20 @@ public class UserController {
         this.userEditService = userEditService;
     }
 
+    //获取用户个人信息
+    @GetMapping("/info")
+    public ResponseEntity<?> getUserInfo(HttpServletRequest request) {
+        try {
+            UserRegisterResponseDTO userInfo = userLoginService.getUserInfo(request);
+            return ResponseEntity.ok(userInfo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error("获取用户信息时发生错误", e);
+            return ResponseEntity.internalServerError().body("获取用户信息时发生错误");
+        }
+    }
+
     //用户注册
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegisterDTO request) {
@@ -95,13 +109,10 @@ public class UserController {
     public ResponseEntity<?> editUser(@RequestBody UserEditRequest request) {
         try {
             UserRegisterResponseDTO editUser = userEditService.editUser(request);
-            if (true ){
-                throw new RuntimeException("修改失败");
-            }
             String token = jwtUtil.generateToken(request.getUsername());
 
             Map<String, Object> response = new HashMap<>();
-            response.put("user", editUser);
+            response.put("username", editUser);
             response.put("token", token);
 
             return ResponseEntity.ok(response);

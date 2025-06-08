@@ -1,9 +1,13 @@
 package com.example.repair.service.impl;
 
 import com.example.repair.dto.LoginRequest;
+import com.example.repair.dto.UserProfileDTO;
+import com.example.repair.dto.UserRegisterResponseDTO;
 import com.example.repair.entity.User;
 import com.example.repair.entity.UserLoginRecord;
+import com.example.repair.entity.UserProfile;
 import com.example.repair.repository.UserLoginRecordRepository;
+import com.example.repair.repository.UserProfileRepository;
 import com.example.repair.repository.UserRepository;
 import com.example.repair.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -20,19 +24,23 @@ import java.util.Optional;
 public class UserLoginService {
     @Autowired
     private final UserRepository userRepository;
-    private final UserLoginRecordRepository userLoginRecordRepository;  // 新增属性
+    private final UserLoginRecordRepository userLoginRecordRepository;
+    private final UserProfileRepository userProfileRepository;
     private final JwtUtil jwtUtil;
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     public UserLoginService(
             UserRepository userRepository,
-            UserLoginRecordRepository userLoginRecordRepository , // 新增参数
+            UserLoginRecordRepository userLoginRecordRepository,
+            UserProfileRepository userProfileRepository,
             JwtUtil jwtUtil
-
     ) {
         this.userRepository = userRepository;
         this.userLoginRecordRepository = userLoginRecordRepository;
+        this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
     }
+
     public String login(LoginRequest request) {
         //Optional<User> userOptional = userRepository.findByUsername(request.username());
         User user = userRepository.findByUsername(request.username()).orElse(null);
@@ -91,5 +99,44 @@ public class UserLoginService {
             throw new RuntimeException("无效的 Token: " + e.getMessage());
         }
 
+    }
+
+    public UserRegisterResponseDTO getUserInfo(HttpServletRequest request) {
+        String token = jwtUtil.getTokenFromRequest(request);
+        if (token == null) {
+            throw new IllegalArgumentException("未提供有效的Token");
+        }
+
+        try {
+            String username = jwtUtil.extractUsername(token);
+            if (jwtUtil.isTokenExpired(token)) {
+                throw new IllegalArgumentException("Token已过期");
+            }
+
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+
+            UserProfile profile = userProfileRepository.findByUserId(user.getId())
+                    .orElse(null);
+
+            UserProfileDTO profileDTO = new UserProfileDTO();
+            if (profile != null) {
+                profileDTO.setId(profile.getId());
+                profileDTO.setPhone(profile.getPhone());
+                profileDTO.setName(profile.getName());
+                profileDTO.setEmail(profile.getEmail());
+                profileDTO.setAddress(profile.getAddress());
+            }
+
+            UserRegisterResponseDTO response = new UserRegisterResponseDTO();
+            response.setId(user.getId());
+            response.setUsername(user.getUsername());
+            response.setPassword(null); // 不返回密码
+            response.setProfile(profileDTO);
+
+            return response;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("获取用户信息失败: " + e.getMessage());
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.example.repair.dto.*;
 import com.example.repair.entity.*;
 import com.example.repair.enums.OrderStatus;
 import com.example.repair.enums.StaffStatus;
+import com.example.repair.enums.UserRepairRequestStatus;
 import com.example.repair.repository.*;
 import com.example.repair.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class AdminServiceImpl implements AdminService {
     
     @Autowired
     private RepairOrderRepository repairOrderRepository;
+    
+    @Autowired
+    private RepairRequestRepository repairRequestRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -400,6 +404,79 @@ public class AdminServiceImpl implements AdminService {
             default:
                 throw new RuntimeException("不支持的数据类型");
         }
+    }
+
+    @Override
+    public List<RepairRequestDTO> getPendingRepairRequests() {
+        return repairRequestRepository.findByStatus(UserRepairRequestStatus.UNREVIEWED)
+                .stream()
+                .map(request -> {
+                    RepairRequestDTO dto = new RepairRequestDTO();
+                    dto.setId(request.getId());
+                    dto.setUserId(request.getUserId());
+                    dto.setVehicleId(request.getVehicleId());
+                    dto.setDescription(request.getDescription());
+                    dto.setStatus(request.getStatus());
+                    dto.setCreatedAt(request.getCreatedAt());
+
+                    // 获取用户信息
+                    User user = userRepository.findById(request.getUserId())
+                            .orElse(null);
+                    if (user != null) {
+                        dto.setUsername(user.getUsername());
+                    }
+
+                    // 获取车辆信息
+                    Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                            .orElse(null);
+                    if (vehicle != null) {
+                        dto.setVehicleInfo(vehicle.getLicensePlate() + " - " + 
+                                         vehicle.getBrand() + " " + vehicle.getModel());
+                    }
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public RepairOrderDTO convertRequestToOrder(Long requestId, RepairRequestToOrderDTO request) {
+        // 获取维修请求
+        RepairRequest repairRequest = repairRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("维修请求不存在"));
+
+        // 验证请求状态
+        if (repairRequest.getStatus() != UserRepairRequestStatus.UNREVIEWED) {
+            throw new IllegalArgumentException("该维修请求已被处理");
+        }
+
+        // 获取维修人员
+        MaintenanceStaff repairman = repairmanRepository.findById(request.getRepairmanId())
+                .orElseThrow(() -> new IllegalArgumentException("维修人员不存在"));
+
+        // 获取车辆信息
+        Vehicle vehicle = vehicleRepository.findById(repairRequest.getVehicleId())
+                .orElseThrow(() -> new IllegalArgumentException("车辆不存在"));
+
+        // 创建维修工单
+        RepairOrder order = new RepairOrder();
+        order.setRepairman(repairman);
+        order.setVehicle(vehicle);
+        order.setStatus(OrderStatus.PENDING);
+        order.setDescription(request.getDescription() != null ? 
+                request.getDescription() : repairRequest.getDescription());
+        order.setCreateTime(LocalDateTime.now());
+
+        // 保存工单
+        order = repairOrderRepository.save(order);
+
+        // 更新维修请求状态
+        repairRequest.setStatus(UserRepairRequestStatus.APPROVED);
+        repairRequestRepository.save(repairRequest);
+
+        // 转换为DTO返回
+        return convertToRepairOrderDTO(order);
     }
 
     // 辅助方法

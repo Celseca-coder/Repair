@@ -324,4 +324,30 @@ public class AdminController {
         // TODO: 实现日志查询功能，可以使用 ELK 或其他日志系统
         return ResponseEntity.ok(new ArrayList<>());
     }
+
+    // 将维修请求转换为维修工单
+    @PostMapping("/repair-requests/{requestId}/convert-to-order")
+    public ResponseEntity<?> convertRequestToOrder(
+            @PathVariable Long requestId,
+            @RequestBody RepairRequestToOrderDTO request) {
+        try {
+            RepairOrderDTO order = adminService.convertRequestToOrder(requestId, request);
+            return ResponseEntity.ok(order);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("转换维修请求到工单时发生错误");
+        }
+    }
+
+    // 获取所有待处理的维修请求
+    @GetMapping("/repair-requests/pending")
+    public ResponseEntity<?> getPendingRepairRequests() {
+        try {
+            List<RepairRequestDTO> requests = adminService.getPendingRepairRequests();
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("获取待处理维修请求时发生错误");
+        }
+    }
 } 
