@@ -200,7 +200,7 @@ public class RepairmanServiceImpl implements RepairmanService {
         RepairOrder order = repairOrderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("维修工单不存在"));
             
-        if (order.getStatus() != OrderStatus.IN_PROGRESS) {
+        if (order.getStatus() != OrderStatus.IN_PROGRESS&&order.getStatus() != OrderStatus.ACCEPTED) {
             throw new RuntimeException("工单状态不正确，无法更新结果");
         }
         
@@ -236,10 +236,22 @@ public class RepairmanServiceImpl implements RepairmanService {
     
     @Override
     public Double calculateLaborIncome(Long repairmanId) {
-        List<RepairOrder> completedOrders = repairOrderRepository.findByRepairmanIdAndStatus(repairmanId, OrderStatus.valueOf(OrderStatus.COMPLETED.name()));
-        return completedOrders.stream()
-            .mapToDouble(RepairOrder::getLaborCost)
-            .sum();
+        // 获取维修人员的所有订单
+        List<RepairOrder> allOrders = repairOrderRepository.findByRepairmanId(repairmanId);
+        
+        // 过滤掉PENDING和REJECTED状态的订单
+        long validOrderCount = allOrders.stream()
+            .filter(order -> order.getStatus() != OrderStatus.PENDING && 
+                           order.getStatus() != OrderStatus.REJECTED)
+            .count();
+            
+        // 获取维修人员信息以获取时薪
+        MaintenanceStaff staff = maintenanceStaffRepository.findById(repairmanId)
+            .orElseThrow(() -> new RuntimeException("维修人员不存在"));
+            
+        // 计算总工时（n*2）和工时费
+        double totalHours = validOrderCount * 2.0;
+        return totalHours * staff.getHourlyRate().doubleValue();
     }
     
     @Override
