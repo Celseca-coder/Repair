@@ -4,6 +4,7 @@ import com.example.repair.dto.*;
 import com.example.repair.entity.*;
 import com.example.repair.enums.OrderStatus;
 import com.example.repair.enums.StaffStatus;
+import com.example.repair.enums.UserRepairRequestStatus;
 import com.example.repair.repository.*;
 import com.example.repair.service.RepairmanService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class RepairmanServiceImpl implements RepairmanService {
     
     @Autowired
     private RepairProgressRepository repairProgressRepository;
+    
+    @Autowired
+    private RepairRequestRepository repairRequestRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -133,7 +137,40 @@ public class RepairmanServiceImpl implements RepairmanService {
             throw new RuntimeException("工单状态不正确，无法拒绝");
         }
         
-        order.setStatus(OrderStatus.REJECTED);
+        // 查找下一个可用的维修人员
+        List<MaintenanceStaff> availableStaff = maintenanceStaffRepository.findByStatus(StaffStatus.IDLE);
+        if (availableStaff.isEmpty()) {
+            throw new RuntimeException("当前没有可用的维修人员");
+        }
+        
+        // 移除当前维修人员（如果存在）
+        availableStaff.removeIf(s -> s.getId().equals(repairmanId));
+        
+        // 如果没有其他可用维修人员，则保持工单为 PENDING 状态
+        if (availableStaff.isEmpty()) {
+            order.setStatus(OrderStatus.PENDING);
+            order.setRepairman(null);
+        } else {
+            // 分配给下一个可用的维修人员
+            MaintenanceStaff nextStaff = availableStaff.get(0);
+            order.setRepairman(nextStaff);
+            order.setStatus(OrderStatus.PENDING);
+        }
+        
+        // 清除之前的时间戳
+        order.setAcceptTime(null);
+        order.setCompleteTime(null);
+        order.setTotalHours(null);
+        order.setLaborCost(null);
+        order.setMaterialCost(null);
+        order.setRepairResult(null);
+        
+        // 清除材料使用记录
+        order.getMaterialUsages().clear();
+        
+        // 清除进度记录
+        order.getProgressRecords().clear();
+        
         order = repairOrderRepository.save(order);
         
         return convertToRepairOrderDTO(order);
@@ -222,6 +259,21 @@ public class RepairmanServiceImpl implements RepairmanService {
         order.setLaborCost(hours * staff.getHourlyRate().doubleValue());
         
         order = repairOrderRepository.save(order);
+
+        // 创建一个最终变量用于lambda表达式中引用
+        final RepairOrder finalOrder = order;
+
+        // 根据工单的 vehicleId 和 description 查找对应的 RepairRequest
+        // 注意：这里假设一个车辆在同一时间只有一个未处理的维修请求，且描述可能相同
+        // 如果有更明确的关联（例如 RepairOrder 中直接存储 RepairRequestId），则应使用更精确的方法
+        repairRequestRepository.findByVehicleIdAndStatus(finalOrder.getVehicle().getId(), UserRepairRequestStatus.UNREVIEWED)
+            .stream()
+            .filter(request -> request.getDescription().equals(finalOrder.getDescription()))
+            .findFirst()
+            .ifPresent(repairRequest -> {
+                repairRequest.setStatus(UserRepairRequestStatus.APPROVED); // 将请求状态设置为已批准
+                repairRequestRepository.save(repairRequest);
+            });
         
         // 更新维修人员状态
         staff.setStatus(StaffStatus.IDLE);
@@ -260,57 +312,47 @@ public class RepairmanServiceImpl implements RepairmanService {
     
     @Override
     public RepairmanDTO getCurrentUserInfo() {
-        // 从SecurityContext中获取当前登录用户
+        // 从Spring Security上下文中获取当前登录用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        
-        MaintenanceStaff staff = maintenanceStaffRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("维修人员不存在"));
-            
-        return convertToRepairmanDTO(staff);
-    }
-    
-    @Override
-    public Double calculateOrderMaterialCost(Long orderId) {
-        RepairOrder order = repairOrderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("维修工单不存在"));
-            
-        // 如果订单有materialCost字段，直接返回
-        if (order.getMaterialCost() != null) {
-            return order.getMaterialCost();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("用户未登录");
         }
         
-        // 否则计算所有材料使用记录的总和
-        return order.getMaterialUsages().stream()
-            .map(usage -> usage.getTotalPrice().doubleValue())
-            .reduce(0.0, Double::sum);
-    }
-    
-    @Override
-    public Double calculateTotalMaterialCost(Long repairmanId) {
-        // 获取该维修人员的所有订单
-        List<RepairOrder> orders = repairOrderRepository.findByRepairmanId(repairmanId);
+        String username = authentication.getName();
+        MaintenanceStaff staff = maintenanceStaffRepository.findByUsername(username);
+        if (staff == null) {
+            throw new RuntimeException("用户不存在");
+        }
         
-        // 计算所有订单的材料费用总和
-        return orders.stream()
-            .map(order -> {
-                // 如果订单有materialCost字段，使用该值
-                if (order.getMaterialCost() != null) {
-                    return order.getMaterialCost();
-                }
-                // 否则计算该订单所有材料使用记录的总和
-                return order.getMaterialUsages().stream()
-                    .map(usage -> usage.getTotalPrice().doubleValue())
-                    .reduce(0.0, Double::sum);
-            })
-            .reduce(0.0, Double::sum);
+        RepairmanDTO dto = new RepairmanDTO();
+        dto.setId(staff.getId());
+        dto.setUsername(staff.getUsername());
+        dto.setWorkType(staff.getWorkType());
+        dto.setHourlyRate(staff.getHourlyRate().doubleValue());
+        dto.setStatus(staff.getStatus());
+        return dto;
     }
     
     // 辅助方法：转换实体到DTO
     private RepairOrderDTO convertToRepairOrderDTO(RepairOrder order) {
         RepairOrderDTO dto = new RepairOrderDTO();
         dto.setId(order.getId());
-        dto.setRepairmanId(order.getRepairman().getId());
+        
+        // 设置维修人员信息
+        if (order.getRepairman() != null) {
+            dto.setRepairmanId(order.getRepairman().getId());
+            dto.setRepairmanName(order.getRepairman().getUsername());
+            dto.setRepairmanWorkType(order.getRepairman().getWorkType().name());
+        }
+        
+        // 设置车辆信息
+        if (order.getVehicle() != null) {
+            dto.setVehicleId(order.getVehicle().getId());
+            dto.setVehicleLicensePlate(order.getVehicle().getLicensePlate());
+            dto.setVehicleBrand(order.getVehicle().getBrand());
+            dto.setVehicleModel(order.getVehicle().getModel());
+        }
+        
         dto.setStatus(order.getStatus().name());
         dto.setDescription(order.getDescription());
         dto.setCreateTime(order.getCreateTime());
@@ -349,16 +391,6 @@ public class RepairmanServiceImpl implements RepairmanService {
         dto.setStatus(progress.getStatus().name());
         dto.setUpdateTime(progress.getUpdateTime());
         dto.setRemark(progress.getRemark());
-        return dto;
-    }
-    
-    private RepairmanDTO convertToRepairmanDTO(MaintenanceStaff staff) {
-        RepairmanDTO dto = new RepairmanDTO();
-        dto.setId(staff.getId());
-        dto.setUsername(staff.getUsername());
-        dto.setWorkType(staff.getWorkType());
-        dto.setHourlyRate(staff.getHourlyRate().doubleValue());
-        dto.setStatus(staff.getStatus());
         return dto;
     }
 } 

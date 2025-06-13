@@ -11,4 +11,5 @@ import java.util.List;
 public interface RepairRequestRepository extends JpaRepository<RepairRequest, Long> {
     List<RepairRequest> findByStatus(UserRepairRequestStatus status);
     List<RepairRequest> findByUserId(Long userId);
+    List<RepairRequest> findByVehicleIdAndStatus(Long vehicleId, UserRepairRequestStatus status);
 }

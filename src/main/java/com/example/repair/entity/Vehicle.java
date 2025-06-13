@@ -1,6 +1,7 @@
 package com.example.repair.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -34,8 +35,9 @@ public class Vehicle {
     
     @Column
     private LocalDateTime lastMaintenanceDate;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonBackReference
     private User owner;

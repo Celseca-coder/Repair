@@ -27,17 +27,31 @@ public class UrgeController {
     public ResponseEntity<?> urgeOrder(@PathVariable Long orderId,
                                        @RequestBody(required = false) UrgeRequestDTO request
                                        ) {
-        User user = userRepository.findByUsername(request.getUsername()).orElse(null);
-        RepairOrder order = repairOrderRepository.findById(orderId).orElse(null);
+        // 检查请求体是否为空
+        if (request == null || request.getUsername() == null) {
+            return ResponseEntity.badRequest().body("用户名不能为空");
+        }
+
+        // 检查用户是否存在
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        // 检查工单是否存在
+        RepairOrder order = repairOrderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("维修工单不存在"));
+
+        // 检查用户是否为工单对应车辆的车主
         if (!order.getVehicle().getOwner().getId().equals(user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("不允许催别人的订单");
         }
+
         // 频率限制（如1小时内只能催一次）
         if (urgeRecordService.isUrgedRecently(order, user)) {
             return ResponseEntity.badRequest().body("催单太频繁，请稍后再试");
         }
-        urgeRecordService.addUrgeRecord(order, user, request == null ? null : request.getRemark());
-        // 可在此触发通知
+
+        // 添加催单记录
+        urgeRecordService.addUrgeRecord(order, user, request.getRemark());
         return ResponseEntity.ok("催单成功");
     }
 }

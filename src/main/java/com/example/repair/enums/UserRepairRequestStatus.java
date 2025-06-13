@@ -4,7 +4,8 @@ public enum UserRepairRequestStatus {
     UNREVIEWED("未审核"),
     REJECTED("已拒绝"),
     ACCEPTED("已接受"),
-    APPROVED("已批准");
+    APPROVED("已批准"),
+    COMPLETED("已完成");
 
     private final String description;
 
