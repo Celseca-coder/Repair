@@ -145,7 +145,7 @@ public class RepairmanServiceImpl implements RepairmanService {
         RepairOrder order = repairOrderRepository.findById(materialUsageDTO.getRepairOrderId())
             .orElseThrow(() -> new RuntimeException("维修工单不存在"));
             
-        if (order.getStatus() != OrderStatus.IN_PROGRESS) {
+        if (order.getStatus() == OrderStatus.REJECTED) {
             throw new RuntimeException("工单状态不正确，无法记录材料使用");
         }
         
@@ -159,8 +159,12 @@ public class RepairmanServiceImpl implements RepairmanService {
         
         usage = materialUsageRepository.save(usage);
         
-        // 更新工单的材料费用
-        order.setMaterialCost(order.getMaterialCost() + materialUsageDTO.getTotalPrice());
+        // 更新工单的材料费用，处理null的情况
+        Double currentMaterialCost = order.getMaterialCost();
+        if (currentMaterialCost == null) {
+            currentMaterialCost = 0.0;
+        }
+        order.setMaterialCost(currentMaterialCost + materialUsageDTO.getTotalPrice());
         repairOrderRepository.save(order);
         
         return convertToMaterialUsageDTO(usage);

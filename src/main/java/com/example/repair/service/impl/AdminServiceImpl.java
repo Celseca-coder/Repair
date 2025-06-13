@@ -491,6 +491,26 @@ public class AdminServiceImpl implements AdminService {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
+        
+        // 根据实体类型设置用户类型
+        if (user instanceof MaintenanceStaff) {
+            dto.setUserType("MAINTENANCE");
+        } else {
+            dto.setUserType("USER");
+        }
+        
+        // 获取用户档案信息
+        userProfileRepository.findByUserId(user.getId())
+            .ifPresent(profile -> {
+                UserDTO.UserProfileDTO profileDTO = new UserDTO.UserProfileDTO();
+                profileDTO.setId(profile.getId());
+                profileDTO.setPhone(profile.getPhone());
+                profileDTO.setName(profile.getName());
+                profileDTO.setEmail(profile.getEmail());
+                profileDTO.setAddress(profile.getAddress());
+                dto.setProfile(profileDTO);
+            });
+            
         return dto;
     }
 

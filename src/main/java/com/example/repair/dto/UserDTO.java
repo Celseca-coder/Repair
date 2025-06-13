@@ -6,6 +6,7 @@ import lombok.Data;
 public class UserDTO {
     private Long id;
     private String username;
+    private String userType; // 用户类型：USER 或 MAINTENANCE
     private UserProfileDTO profile;
 
     @Data
