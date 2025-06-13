@@ -65,6 +65,12 @@ public class SecurityConfig {
                         // 公开访问的端点
                         .requestMatchers(HttpMethod.POST, "/api/repairman/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/repairman/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/repairman/{repairmanId}/orders/{orderId}/accept").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/repairman/{repairmanId}/orders/{orderId}/reject").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/repairman/{repairmanId}/orders/{orderId}/result").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/repairman/orders/{orderId}/materials").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/repairman/orders/{orderId}/progress").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
@@ -79,7 +85,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/repairs/getRequest").authenticated() // 获取维修请求通常需要认证 (或部分公开)
                         .requestMatchers(HttpMethod.POST, "/repairs/getOrders").authenticated() // 获取订单通常需要认证 (或部分公开)
                         .requestMatchers(HttpMethod.POST, "/reviews/addReviews").authenticated() // 添加评论通常需要认证
-
+                        .requestMatchers(HttpMethod.POST, "/api/repairman/").authenticated()
                         // 对于 /vehicles/** 的 POST 和 GET 请求，要求认证 (这与上面的permitAll规则有重叠和潜在冲突，需要整合)
                         // .requestMatchers(HttpMethod.POST, "/vehicles/**").authenticated() // 这条规则被上面的具体路径覆盖了
                         // .requestMatchers(HttpMethod.GET, "/vehicles/**").authenticated()
