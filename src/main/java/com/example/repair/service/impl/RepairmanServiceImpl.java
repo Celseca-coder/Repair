@@ -260,25 +260,50 @@ public class RepairmanServiceImpl implements RepairmanService {
     
     @Override
     public RepairmanDTO getCurrentUserInfo() {
-        // 从Spring Security上下文中获取当前登录用户
+        // 从SecurityContext中获取当前登录用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("用户未登录");
-        }
-        
         String username = authentication.getName();
-        MaintenanceStaff staff = maintenanceStaffRepository.findByUsername(username);
-        if (staff == null) {
-            throw new RuntimeException("用户不存在");
+        
+        MaintenanceStaff staff = maintenanceStaffRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("维修人员不存在"));
+            
+        return convertToRepairmanDTO(staff);
+    }
+    
+    @Override
+    public Double calculateOrderMaterialCost(Long orderId) {
+        RepairOrder order = repairOrderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("维修工单不存在"));
+            
+        // 如果订单有materialCost字段，直接返回
+        if (order.getMaterialCost() != null) {
+            return order.getMaterialCost();
         }
         
-        RepairmanDTO dto = new RepairmanDTO();
-        dto.setId(staff.getId());
-        dto.setUsername(staff.getUsername());
-        dto.setWorkType(staff.getWorkType());
-        dto.setHourlyRate(staff.getHourlyRate().doubleValue());
-        dto.setStatus(staff.getStatus());
-        return dto;
+        // 否则计算所有材料使用记录的总和
+        return order.getMaterialUsages().stream()
+            .map(usage -> usage.getTotalPrice().doubleValue())
+            .reduce(0.0, Double::sum);
+    }
+    
+    @Override
+    public Double calculateTotalMaterialCost(Long repairmanId) {
+        // 获取该维修人员的所有订单
+        List<RepairOrder> orders = repairOrderRepository.findByRepairmanId(repairmanId);
+        
+        // 计算所有订单的材料费用总和
+        return orders.stream()
+            .map(order -> {
+                // 如果订单有materialCost字段，使用该值
+                if (order.getMaterialCost() != null) {
+                    return order.getMaterialCost();
+                }
+                // 否则计算该订单所有材料使用记录的总和
+                return order.getMaterialUsages().stream()
+                    .map(usage -> usage.getTotalPrice().doubleValue())
+                    .reduce(0.0, Double::sum);
+            })
+            .reduce(0.0, Double::sum);
     }
     
     // 辅助方法：转换实体到DTO
@@ -324,6 +349,16 @@ public class RepairmanServiceImpl implements RepairmanService {
         dto.setStatus(progress.getStatus().name());
         dto.setUpdateTime(progress.getUpdateTime());
         dto.setRemark(progress.getRemark());
+        return dto;
+    }
+    
+    private RepairmanDTO convertToRepairmanDTO(MaintenanceStaff staff) {
+        RepairmanDTO dto = new RepairmanDTO();
+        dto.setId(staff.getId());
+        dto.setUsername(staff.getUsername());
+        dto.setWorkType(staff.getWorkType());
+        dto.setHourlyRate(staff.getHourlyRate().doubleValue());
+        dto.setStatus(staff.getStatus());
         return dto;
     }
 } 
