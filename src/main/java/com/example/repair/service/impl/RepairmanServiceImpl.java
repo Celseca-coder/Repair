@@ -253,10 +253,11 @@ public class RepairmanServiceImpl implements RepairmanService {
         order.setCompleteTime(LocalDateTime.now());
         order.setRepairResult(result);
         
-        // 计算工时费
-        double hours = java.time.Duration.between(order.getAcceptTime(), order.getCompleteTime()).toHours();
-        order.setTotalHours(hours);
-        order.setLaborCost(hours * staff.getHourlyRate().doubleValue());
+        // 计算工时费，取2小时和实际工时的最大值
+        double actualHours = java.time.Duration.between(order.getAcceptTime(), order.getCompleteTime()).toHours();
+        double totalHours = Math.max(2.0, actualHours);
+        order.setTotalHours(totalHours);
+        order.setLaborCost(totalHours * staff.getHourlyRate().doubleValue());
         
         order = repairOrderRepository.save(order);
 
@@ -340,7 +341,7 @@ public class RepairmanServiceImpl implements RepairmanService {
         
         // 设置维修人员信息
         if (order.getRepairman() != null) {
-            dto.setRepairmanId(order.getRepairman().getId());
+        dto.setRepairmanId(order.getRepairman().getId());
             dto.setRepairmanName(order.getRepairman().getUsername());
             dto.setRepairmanWorkType(order.getRepairman().getWorkType().name());
         }

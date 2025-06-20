@@ -467,6 +467,7 @@ public class AdminServiceImpl implements AdminService {
         order.setDescription(request.getDescription() != null ? 
                 request.getDescription() : repairRequest.getDescription());
         order.setCreateTime(LocalDateTime.now());
+        order.setTotalHours(2.0); // 初始化工时为2小时
 
         // 保存工单
         order = repairOrderRepository.save(order);
@@ -477,6 +478,50 @@ public class AdminServiceImpl implements AdminService {
 
         // 转换为DTO返回
         return convertToRepairOrderDTO(order);
+    }
+
+    @Override
+    public Map<String, Object> getBrandRepairStatistics() {
+        List<RepairOrder> allOrders = repairOrderRepository.findAll();
+        Map<String, List<RepairOrder>> brandOrderMap = allOrders.stream()
+            .filter(order -> order.getVehicle() != null && order.getVehicle().getBrand() != null)
+            .collect(Collectors.groupingBy(order -> order.getVehicle().getBrand()));
+
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, List<RepairOrder>> entry : brandOrderMap.entrySet()) {
+            String brand = entry.getKey();
+            List<RepairOrder> orders = entry.getValue();
+            int count = orders.size();
+            double avgCost = orders.stream()
+                .mapToDouble(order -> {
+                    double labor = order.getLaborCost() != null ? order.getLaborCost() : 0.0;
+                    double material = order.getMaterialCost() != null ? order.getMaterialCost() : 0.0;
+                    return labor + material;
+                })
+                .average()
+                .orElse(0.0);
+            Map<String, Object> brandStats = new HashMap<>();
+            brandStats.put("count", count);
+            brandStats.put("avgCost", avgCost);
+            result.put(brand, brandStats);
+        }
+        return result;
+    }
+
+    @Override
+    public LocalDateTime getLastSalaryPaidTime(Long staffId) {
+        MaintenanceStaff staff = repairmanRepository.findById(staffId)
+            .orElseThrow(() -> new RuntimeException("维修人员不存在"));
+        return staff.getLastSalaryPaidTime();
+    }
+
+    @Override
+    @Transactional
+    public void updateLastSalaryPaidTime(Long staffId, LocalDateTime paidTime) {
+        MaintenanceStaff staff = repairmanRepository.findById(staffId)
+            .orElseThrow(() -> new RuntimeException("维修人员不存在"));
+        staff.setLastSalaryPaidTime(paidTime);
+        repairmanRepository.save(staff);
     }
 
     // 辅助方法
@@ -556,7 +601,7 @@ public class AdminServiceImpl implements AdminService {
             dto.setRepairmanId(order.getRepairman().getId());
         }
         if (order.getVehicle() != null) {
-            dto.setId(order.getVehicle().getId());
+            dto.setVehicleId(order.getVehicle().getId());
         }
         return dto;
     }

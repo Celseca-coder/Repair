@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -165,6 +166,11 @@ public class AdminController {
     @GetMapping("/statistics/financial")
     public ResponseEntity<Map<String, Object>> getFinancialStatistics() {
         return ResponseEntity.ok(adminService.getFinancialStatistics());
+    }
+    
+    @GetMapping("/statistics/brand-repair")
+    public ResponseEntity<Map<String, Object>> getBrandRepairStatistics() {
+        return ResponseEntity.ok(adminService.getBrandRepairStatistics());
     }
     
     // 数据一致性检查
@@ -349,5 +355,17 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("获取待处理维修请求时发生错误");
         }
+    }
+
+    @GetMapping("/repairman/{id}/salary-time")
+    public ResponseEntity<LocalDateTime> getLastSalaryPaidTime(@PathVariable Long id) {
+        return ResponseEntity.ok(adminService.getLastSalaryPaidTime(id));
+    }
+
+    @PostMapping("/repairman/{id}/salary-time")
+    public ResponseEntity<?> updateLastSalaryPaidTime(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        LocalDateTime paidTime = LocalDateTime.parse(body.get("paidTime"));
+        adminService.updateLastSalaryPaidTime(id, paidTime);
+        return ResponseEntity.ok("工资发放时间已更新");
     }
 } 

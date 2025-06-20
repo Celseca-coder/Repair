@@ -56,4 +56,7 @@ public class RepairOrder {
 
     @OneToMany(mappedBy = "repairOrder", cascade = CascadeType.ALL)
     private List<RepairProgress> progressRecords = new ArrayList<>();
+
+    @OneToMany(mappedBy = "repairOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UrgeRecord> urgeRecords = new ArrayList<>();
 } 

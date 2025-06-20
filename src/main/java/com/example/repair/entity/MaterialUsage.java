@@ -1,5 +1,6 @@
 package com.example.repair.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,6 +16,7 @@ public class MaterialUsage {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "repair_order_id")
     private RepairOrder repairOrder;
 

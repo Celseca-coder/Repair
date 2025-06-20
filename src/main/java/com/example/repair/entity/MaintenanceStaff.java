@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -22,4 +23,6 @@ public class MaintenanceStaff extends User {
 
     @Enumerated(EnumType.STRING)
     private StaffStatus status = StaffStatus.IDLE; // 状态，默认为空闲
+
+    private LocalDateTime lastSalaryPaidTime;
 }

@@ -74,6 +74,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/orders/").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/repairmen/").permitAll()
                         // 其他一些您希望允许匿名访问的 POST 请求 (请仔细评估这些是否真的需要对未认证用户开放)
                         .requestMatchers(HttpMethod.POST, "/users/logout").permitAll() // logout 通常也应该在认证后，但有时设计为清除前端状态
                         .requestMatchers(HttpMethod.POST, "/users/editUser").authenticated() // 编辑用户信息通常需要认证

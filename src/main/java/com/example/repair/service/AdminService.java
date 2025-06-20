@@ -3,6 +3,7 @@ package com.example.repair.service;
 import com.example.repair.dto.*;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 
 public interface AdminService {
     // 管理员认证
@@ -40,8 +41,12 @@ public interface AdminService {
     Map<String, Object> getSystemStatistics();
     Map<String, Object> getRepairStatistics();
     Map<String, Object> getFinancialStatistics();
+    Map<String, Object> getBrandRepairStatistics();
     
     // 数据一致性检查
     Map<String, Object> checkDataConsistency();
     void repairDataInconsistency(String type, Long id);
+
+    LocalDateTime getLastSalaryPaidTime(Long staffId);
+    void updateLastSalaryPaidTime(Long staffId, LocalDateTime paidTime);
 } 
