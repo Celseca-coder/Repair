@@ -335,7 +335,7 @@ public class RepairmanServiceImpl implements RepairmanService {
     }
     
     // 辅助方法：转换实体到DTO
-    private RepairOrderDTO convertToRepairOrderDTO(RepairOrder order) {
+    public RepairOrderDTO convertToRepairOrderDTO(RepairOrder order) {
         RepairOrderDTO dto = new RepairOrderDTO();
         dto.setId(order.getId());
         

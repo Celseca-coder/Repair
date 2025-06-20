@@ -8,6 +8,7 @@ import com.example.repair.repository.RepairOrderRepository;
 import com.example.repair.repository.VehicleRepository;
 import com.example.repair.service.VehicleService;
 import com.example.repair.service.impl.RepairRequestService;
+import com.example.repair.service.impl.RepairmanServiceImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,9 @@ public class UserRepairController {
     
     @Autowired
     private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private RepairmanServiceImpl repairmanServiceImpl;
 
     @PostMapping("/addRequest")
     public ResponseEntity<?> addRequest(@Valid @RequestBody VehicleRepairRequest request) {
@@ -62,7 +66,10 @@ public class UserRepairController {
         try {
             Vehicle vehicle = vehicleRepository.findById(request.getVehicleId()).orElse(null);
             List<RepairOrder> repairOrders = repairOrderRepository.findByVehicle(vehicle);
-            return ResponseEntity.ok(repairOrders);
+            List<RepairOrderDTO> dtos = repairOrders.stream()
+                .map(repairmanServiceImpl::convertToRepairOrderDTO)
+                .collect(java.util.stream.Collectors.toList());
+            return ResponseEntity.ok(dtos);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
